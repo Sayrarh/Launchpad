@@ -5,7 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Launchpad {
     ///////////////EVENTS//////////////////
-    event ProjectCreated(
+    /**
+     * @dev Emits when a new project is listed on the launchpad with its details
+     */
+    event ProjectListed(
         uint256 indexed projectId,
         address indexed projectOwner,
         address indexed token,
@@ -17,16 +20,26 @@ contract Launchpad {
         uint256 endTimeInMinutes
     );
 
+    /**
+     * @dev Emits when an investor/project participant makes an investment/contribution in a particular IDO project
+     */
     event InvestmentMade(
         uint256 indexed projectId,
         address indexed investor,
         uint256 amountInvested
     );
 
+    /**
+     * @dev Emits when the allocation of tokens is updated for a participant in a particular IDO project
+     */
     event AllocationUpdated(address indexed participant, uint256 allocation);
 
+    /**
+     * @dev Emits when a participant claims their allocated tokens
+     */
     event TokenClaimed(address sender, uint256 amountToclaim);
 
+    /////////////////STATE VARIABLES///////////////////
     address public launchPadadmin;
 
     uint256 projectsCurrentId;
@@ -46,8 +59,11 @@ contract Launchpad {
         bool withdrawn;
     }
 
+    //Tracks the investment amount of each participant for a specific project
     mapping(uint256 => mapping(address => uint256)) projectInvestments;
+    //Keeps track of whitelisted tokens for the launchpad
     mapping(address => bool) whitelistedTokens;
+    //tracks whether a participant has already claimed their allocated tokens
     mapping(address => bool) claimed;
 
     // The allocation of a particular IDO for each participant
@@ -81,6 +97,10 @@ contract Launchpad {
     constructor() {
         launchPadadmin = msg.sender;
     }
+
+    /**
+     * @dev function to list a new project with its details
+     */
 
     function listProject(
         IERC20 _token,
@@ -124,7 +144,7 @@ contract Launchpad {
 
         whitelistedTokens[address(_token)] = true;
 
-        emit ProjectCreated(
+        emit ProjectListed(
             projectsCurrentId,
             msg.sender,
             address(_token),
@@ -137,6 +157,9 @@ contract Launchpad {
         );
     }
 
+    /**
+     * @dev function for investors/participants to invest in a particular IDO project
+     */
     function invest(uint256 _projectId) external payable {
         if (_projectId > projectsCurrentId || _projectId == 0)
             revert InvalidProjectID();
@@ -174,6 +197,9 @@ contract Launchpad {
         );
     }
 
+    /**
+     * @dev function calculates and updates the token allocation for each participant based on their contributions in a particular IDO project
+     */
     function updateAllocation(uint256 _projectId) private {
         Project storage project = projects[_projectId];
         uint256 totalRaised = project.totalAmountRaised;
@@ -189,6 +215,10 @@ contract Launchpad {
 
         emit AllocationUpdated(msg.sender, allocation[_projectId][msg.sender]);
     }
+
+    /**
+     * @dev function for participants to claim their allocated tokens after the project ends
+     */
 
     function claimAllocation(uint256 _projectID) external {
         if (_projectID > projectsCurrentId || _projectID == 0)
@@ -214,6 +244,9 @@ contract Launchpad {
         emit TokenClaimed(msg.sender, amountToclaim);
     }
 
+    /**
+     * @dev function allows the IDO project owner to withdraw the raised funds after the listing project period ends
+     */
     function withdrawAmountRaised(uint256 _projectID) external payable {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
@@ -297,8 +330,7 @@ contract Launchpad {
         return address(this).balance;
     }
 
-    ///@dev function to get contract token balance
-    function getTokenBalForAParticularProject(
+    function getTokenBalForAParticularIDOProject(
         uint256 projectId
     ) external view returns (uint256) {
         if (projectId > projectsCurrentId || projectId == 0)
@@ -306,6 +338,16 @@ contract Launchpad {
 
         Project memory project = projects[projectId];
         return IERC20(project.token).balanceOf(address(this));
+    }
+
+    function getTotalInvestorsForAParticularProject(
+        uint256 projectId
+    ) external view returns (uint256) {
+        if (projectId > projectsCurrentId || projectId == 0)
+            revert InvalidProjectID();
+
+        Project memory project = projects[projectId];
+        return project.allIDOPartcipants.length;
     }
 
     receive() external payable {}
