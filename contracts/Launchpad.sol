@@ -12,7 +12,7 @@ contract Launchpad {
         uint256 tokenPrice,
         uint256 minInvestment,
         uint256 maxInvestment,
-        uint256 maxCap,
+        uint256 maxCap, //IDO totalsupply
         uint256 startTimeInMinutes,
         uint256 endTimeInMinutes
     );
@@ -23,15 +23,13 @@ contract Launchpad {
         uint256 amountInvested
     );
 
-    event AllocationUpdated(address indexed participant, uint allocation);
+    event AllocationUpdated(address indexed participant, uint256 allocation);
 
     event TokenClaimed(address sender, uint256 amountToclaim);
 
     address public launchPadadmin;
 
     uint256 projectsCurrentId;
-
-    //fee for launchpad
 
     struct Project {
         address projectOwner;
@@ -234,7 +232,7 @@ contract Launchpad {
         if (!success) revert TxnFailed();
     }
 
-    function getUserInvestmentForAnIDO(
+    function getUserInvestmentForAnIDOInCELO(
         uint256 _projectID,
         uint256 _i
     ) external view returns (uint256) {
@@ -245,14 +243,14 @@ contract Launchpad {
         return projectInvestments[_projectID][project.allIDOPartcipants[_i]];
     }
 
-    function getAUserInvestmentForAProject(
+    function getAUserAllocationForAProject(
         uint256 _projectID,
         address userAddr
     ) external view returns (uint256) {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
 
-        return projectInvestments[_projectID][userAddr];
+        return allocation[_projectID][userAddr];
     }
 
     function cancelProject(uint256 _projectId) external {
@@ -272,7 +270,9 @@ contract Launchpad {
         return projects[_projectID];
     }
 
-    function getTimeLeft(uint256 projectId) public view returns (uint256) {
+    function getTimeLeftForAParticularProject(
+        uint256 projectId
+    ) public view returns (uint256) {
         if (projectId > projectsCurrentId || projectId == 0)
             revert InvalidProjectID();
 
