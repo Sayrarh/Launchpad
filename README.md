@@ -7,6 +7,8 @@
 Welcome to this tutorial where we will delve into the exciting world of Initial DEX Offerings (IDOs) and explore the possibilities of launching projects on a decentralized platform. In this tutorial, we will specifically focus on building a decentralized launchpad on the Celo blockchain.
 Whether you are a developer with some experience in Solidity or someone looking to expand their skills, this tutorial will equip you with the knowledge and tools to create a decentralized launchpad application on Celo.
 
+## Table of Contents
+
 [Building a decentralised launchpad contract on Celo Blockchain](#Building-a-decentralised-launchpad-contract-on-Celo-Blockchain)
 
 - [Introduction](#introduction)
@@ -94,6 +96,7 @@ A launchpad is a platform that facilitates the launching of new cryptocurrency p
 A launchpad serves as an intermediary between project teams and it's potential investors. It also provides a space for investors to discover and participate in these projects.
 
 ### Steps involved in building an IDO Launchpad
+
 Building an IDO launchpad involves several key steps to create a platform that enables the launching of projects and facilitates token sales. Here is an overview of the typical steps involved:
 
 - Determine the specific features and functionalities you want to incorporate into your IDO launchpad. Consider aspects such as user registration, project submission, token sale mechanics, KYC procedures, token distribution, and security measures.
@@ -104,7 +107,7 @@ Building an IDO launchpad involves several key steps to create a platform that e
 
 - Design an intuitive and user-friendly interface for the IDO launchpad. Consider the user experience, project browsing, token purchase process, and account management features. You can build a web-based interface or develop a mobile application based on your target audience and platform requirements.
 
-- Integrate the smart contracts and blockchain functionality into the user interface. This involves connecting the user interface with the deployed smart contracts on the chosen blockchain platform. 
+- Integrate the smart contracts and blockchain functionality into the user interface. This involves connecting the user interface with the deployed smart contracts on the chosen blockchain platform.
 
 - Implement robust security measures to protect user data and funds. Conduct thorough security audits and penetration testing to identify vulnerabilities.
 
@@ -116,11 +119,6 @@ Building an IDO launchpad involves several key steps to create a platform that e
 
 Building an IDO launchpad requires expertise in smart contract development, blockchain integration, user interface design, and security practices. It is essential to follow industry best practices, conduct thorough testing, and maintain a strong focus on security to ensure the success and trustworthiness of the platform.
 
-
-
-
-
-
 - Token Management: The launchpad should be able to handle the listing and management of tokens participating in IDOs. This includes token registration, whitelisting, and token distribution mechanisms.
 
 - Fundraising Mechanism: The launchpad needs to provide a secure and transparent fundraising mechanism for IDOs. This may involve features like token swaps, token lockups, and token release schedules.
@@ -131,13 +129,15 @@ Building an IDO launchpad requires expertise in smart contract development, bloc
 
 - Smart Contract Integration: Integration with smart contracts is crucial to facilitate token transactions, manage token vesting schedules, and execute various rules and conditions specific to the launchpad's functionality.
 
-
 ## Tutorial
 
 STEP 1 - Set up Hardhat Environment
 STEP 2 - Create your Smart contracts
+
 ### Launchpad Contract Explained
+
 STEP 3 - Deploying your contracts
 STEP 4 - Verifying your contracts
 STEP 5 - Interacting with the deployed contracts
+
 ### Conclusion
