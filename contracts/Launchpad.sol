@@ -5,9 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Launchpad is Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    using SafeMath for uint256;
     ///////////////EVENTS//////////////////
     /**
      * @dev Emits when a new project is listed on the launchpad with its details
@@ -20,7 +23,6 @@ contract Launchpad is Pausable, ReentrancyGuard {
         uint256 minInvestment,
         uint256 maxInvestment,
         uint256 maxCap, //IDO totalsupply
-        uint256 startTimeInMinutes,
         uint256 endTimeInMinutes
     );
 
@@ -57,9 +59,10 @@ contract Launchpad is Pausable, ReentrancyGuard {
         uint256 minInvestment;
         uint256 maxInvestment;
         uint256 maxCap; //IDO totalSupply
-        uint256 durationInMinutes;
+        uint256 IDOduration;
         bool isActive;
         uint256 totalAmountRaised;
+        uint256 totalTokenIDOClaimed;
         address[] whiteListedAddresses;
         address[] projectInvestors;
         bool withdrawn;
@@ -74,6 +77,9 @@ contract Launchpad is Pausable, ReentrancyGuard {
 
     // The allocation of a particular IDO for each participant
     mapping(uint256 => mapping(address => uint256)) allocation;
+
+    mapping(uint256 => mapping(address => bool)) private whitelistedAddresses;
+
     mapping(uint256 => IDOProject) projects;
 
     ///////////////ERRORS//////////////////
@@ -91,17 +97,15 @@ contract Launchpad is Pausable, ReentrancyGuard {
     error NotProjectOwner();
     error AlreadyWithdrawn();
     error ProjectStillInProgress();
-    error AlreadyClaimed();
-    error NoInvestment();
     error AddressZero();
     error TxnFailed();
     error TokenAlreadyWhitelisted();
     error ContractNotFullyFunded();
     error EmptyAddress();
     error NotWhiteListed();
-    error InsufficientAmount();
-    error InsufficientBalance();
     error MaxCapExceeded();
+    error TokenAllocationMustBeGreaterThanZero();
+    error UserAlreadyWhitelisted();
 
     constructor() {
         launchPadadmin = msg.sender;
@@ -117,10 +121,9 @@ contract Launchpad is Pausable, ReentrancyGuard {
         uint256 _minInvestment,
         uint256 _maxInvestment,
         uint256 _maxCap,
-        uint256 _startTime,
         uint256 _endTime,
         address[] memory _whiteListedUsers
-    ) external {
+    ) external whenNotPaused {
         if (_tokenPrice == 0) revert TokenPriceMustBeGreaterThanZero();
         if (_minInvestment == 0)
             revert MinimumInvestmentMustBeGreaterThanZero();
@@ -131,15 +134,13 @@ contract Launchpad is Pausable, ReentrancyGuard {
 
         if (_whiteListedUsers.length == 0) revert EmptyAddress();
 
+        projectsCurrentId = projectsCurrentId + 1;
+
         for (uint256 i; i < _whiteListedUsers.length; i++) {
             address user = _whiteListedUsers[i];
             if (user == address(0)) revert AddressZero();
+            whitelistedAddresses[projectsCurrentId][user] = true;
         }
-
-        if (block.timestamp > ((_endTime * 1 minutes) + block.timestamp))
-            revert EndTimeMustBeInFuture();
-
-        projectsCurrentId = projectsCurrentId + 1;
 
         IDOProject storage project = projects[projectsCurrentId];
 
@@ -152,7 +153,7 @@ contract Launchpad is Pausable, ReentrancyGuard {
         project.minInvestment = _minInvestment;
         project.maxInvestment = _maxInvestment;
         project.maxCap = _maxCap;
-        project.durationInMinutes = (_endTime * 1 minutes) + block.timestamp;
+        project.IDOduration = (_endTime * 1 minutes).add(block.timestamp);
         project.whiteListedAddresses = _whiteListedUsers;
         project.isActive = true;
 
@@ -166,31 +167,18 @@ contract Launchpad is Pausable, ReentrancyGuard {
             _minInvestment,
             _maxInvestment,
             _maxCap,
-            _startTime,
             _endTime
         );
     }
 
     function isWhitelisted(
         uint256 _projectId,
-        address _user
+        address _address
     ) private view returns (bool) {
-        IDOProject storage project = projects[_projectId];
-
-        for (uint256 i; i < project.whiteListedAddresses.length; i++) {
-            if (project.whiteListedAddresses[i] == _user) {
-                return true;
-            }
-        }
-        return false;
+        return whitelistedAddresses[_projectId][_address];
     }
 
-    /**
-     * @dev function for whitelisted investors to invest in a particular IDO project
-     */
-    function invest(
-        uint256 _projectId
-    ) external payable whenNotPaused nonReentrant {
+    function invest(uint256 _projectId) external payable whenNotPaused {
         if (_projectId > projectsCurrentId || _projectId == 0)
             revert InvalidProjectID();
 
@@ -203,32 +191,57 @@ contract Launchpad is Pausable, ReentrancyGuard {
         if (IERC20(project.token).balanceOf(address(this)) < project.maxCap)
             revert ContractNotFullyFunded();
 
-        if (block.timestamp > project.durationInMinutes) revert ProjectEnded();
+        if (block.timestamp > project.IDOduration) revert ProjectEnded();
 
         if (msg.value < project.minInvestment)
             revert InvestmentAmtBelowMinimum();
         if (
-            (projectInvestments[_projectId][msg.sender] + msg.value) >
+            (projectInvestments[_projectId][msg.sender].add(msg.value)) >
             project.maxInvestment
         ) revert InvestmentAmtExceedsMaximum();
-        //  uint256 amount = msg.value;
-        //  uint256 IDOBalance = getTokenBalForAParticul(_projectId);
-        if (project.totalAmountRaised + msg.value > project.maxCap)
-            revert MaxCapExceeded();
 
-        // if (IDOBalance < amount) revert InsufficientBalance();
+        uint256 investmentAmount = msg.value;
 
-        //uint256 purchaseTokenAmount = amount * project.tokenPrice / (10 ** 18);
+        // Calculate token allocation
+        uint256 tokenAllocation = (investmentAmount / project.tokenPrice).mul(
+            1e18
+        );
+        if (tokenAllocation == 0) revert TokenAllocationMustBeGreaterThanZero();
 
-        projectInvestments[_projectId][msg.sender] =
-            projectInvestments[_projectId][msg.sender] +
-            msg.value;
+        // Ensure token allocation doesn't exceed the maximum cap
+        if (tokenAllocation > project.maxCap) revert MaxCapExceeded();
 
-        project.totalAmountRaised = project.totalAmountRaised + msg.value;
-        project.projectInvestors.push(msg.sender);
+        // Deduct the token allocation from the total token supply
+        project.maxCap = project.maxCap.sub(tokenAllocation);
 
-        updateAllocation(_projectId);
+        projectInvestments[_projectId][msg.sender] = projectInvestments[
+            _projectId
+        ][msg.sender].add(investmentAmount);
 
+        allocation[_projectId][msg.sender] = allocation[_projectId][msg.sender]
+            .add(tokenAllocation);
+
+        project.totalTokenIDOClaimed = project.totalTokenIDOClaimed.add(
+            tokenAllocation
+        );
+
+        // Transfer the allocated tokens to the participant.
+        IERC20(project.token).safeTransfer(_msgSender(), tokenAllocation);
+        project.totalAmountRaised = project.totalAmountRaised.add(
+            investmentAmount
+        );
+
+        bool alreadyInvestor = false;
+        for (uint256 i; i < project.projectInvestors.length; i++) {
+            if (project.projectInvestors[i] == msg.sender) {
+                alreadyInvestor = true;
+                break;
+            }
+        }
+
+        if (!alreadyInvestor) {
+            project.projectInvestors.push(msg.sender);
+        }
         emit InvestmentMade(
             _projectId,
             msg.sender,
@@ -252,26 +265,29 @@ contract Launchpad is Pausable, ReentrancyGuard {
         super._unpause();
     }
 
-    //function sweep
     function backListUserForAParticularProject(
         uint256 _projectId,
         address _user
-    ) external {
+    ) external whenNotPaused {
         if (_projectId > projectsCurrentId || _projectId == 0)
             revert InvalidProjectID();
 
         IDOProject storage project = projects[_projectId];
         if (msg.sender != project.projectOwner) revert NotProjectOwner();
+        if (_user == address(0)) revert AddressZero();
+        if (whitelistedAddresses[_projectId][_user] == true)
+            revert UserAlreadyWhitelisted();
 
+        whitelistedAddresses[_projectId][_user] = true;
         project.whiteListedAddresses.push(_user);
     }
 
     //["0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2","0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB","0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db"]
 
     /**
-     * @dev Deposit IDO token to the sale contract
+     * @dev alternative to Deposit IDO token for investment
      */
-    function depositTokens(
+    function depositIDOTokens(
         uint256 _projectId,
         uint256 amount
     ) external whenNotPaused {
@@ -280,9 +296,7 @@ contract Launchpad is Pausable, ReentrancyGuard {
 
         IDOProject storage project = projects[_projectId];
         if (msg.sender != project.projectOwner) revert NotProjectOwner();
-        if (amount < project.maxCap) {
-            revert InsufficientAmount();
-        }
+
         IERC20(project.token).safeTransferFrom(
             _msgSender(),
             address(this),
@@ -291,53 +305,11 @@ contract Launchpad is Pausable, ReentrancyGuard {
     }
 
     /**
-     * @dev function calculates and updates the token allocation for each participant based on their contributions in a particular IDO project
-     */
-    function updateAllocation(uint256 _projectId) private {
-        IDOProject storage project = projects[_projectId];
-        uint256 totalRaised = project.totalAmountRaised;
-
-        for (uint256 i; i < project.whiteListedAddresses.length; i++) {
-            uint256 userContribution = projectInvestments[_projectId][
-                project.whiteListedAddresses[i]
-            ];
-            allocation[_projectId][project.whiteListedAddresses[i]] =
-                (userContribution / totalRaised) *
-                project.maxCap;
-        }
-
-        emit AllocationUpdated(msg.sender, allocation[_projectId][msg.sender]);
-    }
-
-    /**
-     * @dev function for participants to claim their allocated tokens after the project ends
-     */
-
-    function claimAllocation(uint256 _projectID) external whenNotPaused {
-        if (_projectID > projectsCurrentId || _projectID == 0)
-            revert InvalidProjectID();
-        IDOProject storage project = projects[_projectID];
-
-        if (block.timestamp < project.durationInMinutes)
-            revert ProjectStillInProgress();
-        if (projectInvestments[_projectID][msg.sender] == 0)
-            revert NoInvestment();
-        if (claimed[msg.sender] == true) revert AlreadyClaimed();
-
-        uint256 amountToclaim = allocation[_projectID][msg.sender];
-
-        claimed[msg.sender] = true;
-
-        //// Transfer the allocated tokens to the participant.
-        IERC20(project.token).safeTransfer(_msgSender(), amountToclaim);
-
-        emit TokenClaimed(_msgSender(), amountToclaim);
-    }
-
-    /**
      * @dev function allows the IDO project owner to withdraw the raised funds after the listing project period ends
      */
-    function withdrawAmountRaised(uint256 _projectID) external payable {
+    function withdrawAmountRaised(
+        uint256 _projectID
+    ) external payable whenNotPaused nonReentrant {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
         IDOProject storage project = projects[_projectID];
@@ -345,7 +317,7 @@ contract Launchpad is Pausable, ReentrancyGuard {
         if (msg.sender != project.projectOwner) revert NotProjectOwner();
         if (project.withdrawn == true) revert AlreadyWithdrawn();
 
-        if (block.timestamp < project.durationInMinutes)
+        if (block.timestamp < project.IDOduration)
             revert ProjectStillInProgress();
         uint256 amountRaised = project.totalAmountRaised;
 
@@ -360,9 +332,9 @@ contract Launchpad is Pausable, ReentrancyGuard {
         launchPadadmin = _newAdmin;
     }
 
-    function getTokenBalForAParticul(
+    function getIDOTokenBalanceInLaunchPad(
         uint256 projectId
-    ) private view returns (uint256) {
+    ) public view returns (uint256) {
         if (projectId > projectsCurrentId || projectId == 0)
             revert InvalidProjectID();
 
@@ -370,23 +342,35 @@ contract Launchpad is Pausable, ReentrancyGuard {
         return IERC20(project.token).balanceOf(address(this));
     }
 
-    function sweep(uint256 _projectID, address to) external {
+    function getTokenLeftForAParticularIDO(
+        uint256 projectId
+    ) public view returns (uint256) {
+        if (projectId > projectsCurrentId || projectId == 0)
+            revert InvalidProjectID();
+
+        IDOProject memory project = projects[projectId];
+        uint256 tokenLeft = project.maxCap.sub(project.totalTokenIDOClaimed);
+
+        return tokenLeft;
+    }
+
+    function sweep(uint256 _projectID, address to) external whenNotPaused {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
         if (to == address(0)) revert AddressZero();
         IDOProject storage project = projects[_projectID];
 
         if (msg.sender != project.projectOwner) revert NotProjectOwner();
-        if (block.timestamp < project.durationInMinutes)
+        if (block.timestamp < project.IDOduration)
             revert ProjectStillInProgress();
 
-        uint256 balance = getTokenBalForAParticul(_projectID);
+        uint256 balance = getIDOTokenBalanceInLaunchPad(_projectID);
         IERC20(project.token).safeTransfer(to, balance);
 
         emit Swept(to, balance);
     }
 
-    function returnInvestorsForAParticularProject(
+    function getInvestorsForAParticularProject(
         uint256 _projectID
     ) external view returns (address[] memory) {
         if (_projectID > projectsCurrentId || _projectID == 0)
@@ -417,13 +401,18 @@ contract Launchpad is Pausable, ReentrancyGuard {
         return allocation[_projectID][userAddr];
     }
 
-    function cancelProject(uint256 _projectId) external {
+    function cancelIDOProject(uint256 _projectId) external {
         if (msg.sender != launchPadadmin) revert NotLaunchPadAdmin();
         if (_projectId > projectsCurrentId || _projectId == 0)
             revert InvalidProjectID();
 
         IDOProject storage project = projects[_projectId];
         project.isActive = false;
+        project.IDOduration = 0;
+        address to = project.projectOwner;
+
+        uint256 balance = getIDOTokenBalanceInLaunchPad(_projectId);
+        IERC20(project.token).safeTransfer(to, balance);
     }
 
     function getProjectDetails(
@@ -440,13 +429,12 @@ contract Launchpad is Pausable, ReentrancyGuard {
         if (projectId > projectsCurrentId || projectId == 0)
             revert InvalidProjectID();
 
-        IDOProject memory project = projects[projectId];
+        IDOProject storage project = projects[projectId];
 
-        if (block.timestamp >= project.durationInMinutes) {
+        if (block.timestamp >= project.IDOduration) {
             return 0; // IDOProject has ended
         } else {
-            uint256 timeLeftInSeconds = project.durationInMinutes -
-                block.timestamp;
+            uint256 timeLeftInSeconds = project.IDOduration - block.timestamp;
             uint256 timeLeftInMinutes = timeLeftInSeconds / 60; // Convert seconds to minutes
             return timeLeftInMinutes;
         }
@@ -470,6 +458,4 @@ contract Launchpad is Pausable, ReentrancyGuard {
         IDOProject memory project = projects[projectId];
         return project.projectInvestors.length;
     }
-
-    receive() external payable {}
 }
