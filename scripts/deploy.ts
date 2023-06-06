@@ -1,19 +1,22 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
 
-  const lockedAmount = ethers.utils.parseEther("0.001");
+  ///DEPLOYING A TOKEN SAMPLE FOR INTERACTION
+  const YamToken = await ethers.getContractFactory("YamToken");
+  const yam = await YamToken.deploy();
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  await yam.deployed();
 
-  await lock.deployed();
+  console.log("Yamtoken Contract Address is", yam.address);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  ///DEPLOYING LAUNCHPAD CONTRACT
+  const LaunchPad = await ethers.getContractFactory("Launchpad");
+  const IDOPad = await LaunchPad.deploy();
+
+  await IDOPad.deployed();
+
+  console.log("LaunchPad Contract Address is", IDOPad.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

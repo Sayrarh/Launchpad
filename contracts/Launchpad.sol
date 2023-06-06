@@ -106,6 +106,7 @@ contract Launchpad is Pausable, ReentrancyGuard {
     error MaxCapExceeded();
     error TokenAllocationMustBeGreaterThanZero();
     error UserAlreadyWhitelisted();
+    error OldAdmin();
 
     constructor() {
         launchPadadmin = msg.sender;
@@ -265,7 +266,7 @@ contract Launchpad is Pausable, ReentrancyGuard {
         super._unpause();
     }
 
-    function backListUserForAParticularProject(
+    function AddUserForAParticularProject(
         uint256 _projectId,
         address _user
     ) external whenNotPaused {
@@ -329,6 +330,8 @@ contract Launchpad is Pausable, ReentrancyGuard {
 
     function changeLaunchPadAdmin(address _newAdmin) external whenNotPaused {
         if (msg.sender != launchPadadmin) revert NotLaunchPadAdmin();
+        if (_newAdmin == address(0)) revert AddressZero();
+        if (_newAdmin == launchPadadmin) revert OldAdmin();
         launchPadadmin = _newAdmin;
     }
 
@@ -357,10 +360,11 @@ contract Launchpad is Pausable, ReentrancyGuard {
     function sweep(uint256 _projectID, address to) external whenNotPaused {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
-        if (to == address(0)) revert AddressZero();
         IDOProject storage project = projects[_projectID];
 
         if (msg.sender != project.projectOwner) revert NotProjectOwner();
+        if (to == address(0)) revert AddressZero();
+
         if (block.timestamp < project.IDOduration)
             revert ProjectStillInProgress();
 
@@ -382,13 +386,11 @@ contract Launchpad is Pausable, ReentrancyGuard {
 
     function getUserInvestmentForAnIDOInCELO(
         uint256 _projectID,
-        uint256 _i
+        address _i
     ) external view returns (uint256) {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
-
-        IDOProject memory project = projects[_projectID];
-        return projectInvestments[_projectID][project.projectInvestors[_i]];
+        return projectInvestments[_projectID][_i];
     }
 
     function getAUserAllocationForAProject(
@@ -421,6 +423,46 @@ contract Launchpad is Pausable, ReentrancyGuard {
         if (_projectID > projectsCurrentId || _projectID == 0)
             revert InvalidProjectID();
         return projects[_projectID];
+    }
+
+    function getProjectPrice(
+        uint256 _projectID
+    ) external view returns (uint256) {
+        if (_projectID > projectsCurrentId || _projectID == 0)
+            revert InvalidProjectID();
+
+        IDOProject memory project = projects[_projectID];
+        return project.tokenPrice;
+    }
+
+    function getProjectMaxCap(
+        uint256 _projectID
+    ) external view returns (uint256) {
+        if (_projectID > projectsCurrentId || _projectID == 0)
+            revert InvalidProjectID();
+
+        IDOProject memory project = projects[_projectID];
+        return project.maxCap;
+    }
+
+    function getProjectTotalAmtRaised(
+        uint256 _projectID
+    ) external view returns (uint256) {
+        if (_projectID > projectsCurrentId || _projectID == 0)
+            revert InvalidProjectID();
+
+        IDOProject memory project = projects[_projectID];
+        return project.totalAmountRaised;
+    }
+
+    function getProjectTotalTokenIDOClaimed(
+        uint256 _projectID
+    ) external view returns (uint256) {
+        if (_projectID > projectsCurrentId || _projectID == 0)
+            revert InvalidProjectID();
+
+        IDOProject memory project = projects[_projectID];
+        return project.totalTokenIDOClaimed;
     }
 
     function getTimeLeftForAParticularProject(
