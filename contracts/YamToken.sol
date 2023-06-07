@@ -13,3 +13,5 @@ contract YamToken is ERC20, Ownable {
         _mint(_launchPadAddr, amount);
     }
 }
+
+

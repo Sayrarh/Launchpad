@@ -1,4 +1,4 @@
-# Building a decentralised launchpad contract
+# Building a decentralised IDO launchpad contract
 
 ---
 
@@ -24,10 +24,9 @@ Whether you are a developer with some experience in Solidity or someone looking 
 - [Tutorial](#tutorial)
   - [STEP 1 - Set up Hardhat Environment](#step-1---setup-hardhat-environment)
   - [STEP 2 - Create your Smart contracts](#step-2---create-your-smart-contracts)
-    - [Launchpad Contract Explained](#multisig-wallet-contract-explained)
-  - [STEP 3 - Deploying your contracts](#step-3---deploying-your-contracts)
-  - [STEP 4 - Verifying your contracts](#step-4---verifying-your-contracts)
-  - [STEP 5 - Interacting with the deployed contracts](#step-5---interacting-with-the-deployed-contracts)
+    - [Launchpad Contract Explained](#launchpad-contract-explained)
+  - [STEP 3 - Testing your contracts](#step-3---testing-your-contracts)
+  - [STEP 4 - Deploying your contracts](#step-4---deploying-your-contracts)
   - [Conclusion](#conclusion)
 
 ## Objective
@@ -128,16 +127,3 @@ Building an IDO launchpad requires expertise in smart contract development, bloc
 - Governance and Voting: The launchpad should have a governance framework that allows token holders to participate in decision-making processes, such as voting for token listings, project proposals, or platform upgrades.
 
 - Smart Contract Integration: Integration with smart contracts is crucial to facilitate token transactions, manage token vesting schedules, and execute various rules and conditions specific to the launchpad's functionality.
-
-## Tutorial
-
-STEP 1 - Set up Hardhat Environment
-STEP 2 - Create your Smart contracts
-
-### Launchpad Contract Explained
-
-STEP 3 - Deploying your contracts
-STEP 4 - Verifying your contracts
-STEP 5 - Interacting with the deployed contracts
-
-### Conclusion
