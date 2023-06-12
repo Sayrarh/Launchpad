@@ -35,16 +35,6 @@ contract Launchpad is Pausable, ReentrancyGuard {
         uint256 amountInvested
     );
 
-    /**
-     * @dev Emits when the allocation of tokens is updated for a participant in a particular IDO project
-     */
-    event AllocationUpdated(address indexed participant, uint256 allocation);
-
-    /**
-     * @dev Emits when a participant claims their allocated tokens
-     */
-    event TokenClaimed(address sender, uint256 amountToclaim);
-
     event Swept(address to, uint256 value);
 
     /////////////////STATE VARIABLES///////////////////

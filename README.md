@@ -19,6 +19,7 @@ Whether you are a developer with some experience in Solidity or someone looking 
 - [Initial DEX Offering(IDO)](#initial-dex-offeringido)
   - [The concept of IDO](#the-concept-of-ido)
   - [How IDO works](#how-ido-works)
+  - [Major Difference Between ICO and IDO](#major-difference-between-ico-and-ido)
 - [Launchpad](#launchpad)
   - [Steps involved in building an IDO Launchpad](#steps-involved-in-building-an-ido-launchpad)
 - [Tutorial](#tutorial)
@@ -66,6 +67,14 @@ But now, there's a new way to raise funds called an Initial DEX Offering or IDO.
 
 By launching your project through an IDO, you can reach a global audience of potential investors and supporters. The decentralized nature of IDOs offers more freedom and flexibility compared to traditional fundraising methods. You won't have to rely solely on the decisions and demands of specific investors or companies. Instead, you can connect directly with a wide range of individuals who believe in your project and want to be part of its success.
 
+### Major Difference Between ICO and IDO
+
+The major difference between an ICO and an IDO is where the tokens are sold. ICO are sold on centralized exchanges, while IDO are sold on decentralized exchanges. This has a number of implications, including:
+
+- Liquidity: IDO tokens are typically more liquid than ICO tokens, as they can be traded on multiple decentralized exchanges. This makes it easier for investors to buy and sell IDO tokens, which can lead to higher prices.
+- Security: Decentralized exchanges are less susceptible to hacks and fraud than centralized exchanges. This makes IDO contracts a more secure option for investors.
+- Cost: IDO typically have lower fees than ICO. This is because there is no need to pay a centralized exchange to list the tokens.
+
 ### How IDO works
 
 Let's walk through the typical steps involved in an IDO:
@@ -77,8 +86,6 @@ Let's walk through the typical steps involved in an IDO:
 - Platform Selection: The project team selects a decentralized exchange (DEX) platform to host their IDO, which is what we will be building in this tutorial.
 
 - Token Allocation: The project team determines the allocation of tokens for the IDO. They typically reserve a portion of the tokens for the IDO participants, team members, advisors, and community incentives.
-
-- Whitelisting: Depending on the platform and regulatory requirements, the project team may implement a whitelisting process for participants. This ensures that only approved participants can invest in the IDO.
 
 - Investment Period: The IDO opens for a specific period during which participants can invest. Participants send their desired cryptocurrency (such CELO) to the smart contract address associated with the IDO. In return, they receive the project's tokens based on the predefined token price.
 
@@ -93,37 +100,24 @@ _Note: Each IDO may have its own specific variations and processes depending on 
 A launchpad is a platform that facilitates the launching of new cryptocurrency projects, typically through Initial DEX Offerings (IDOs) or Initial Coin Offerings (ICOs). It acts as a launching pad for these projects, providing the infrastructure and tools necessary for their successful introduction to the market.
 <br/>
 A launchpad serves as an intermediary between project teams and it's potential investors. It also provides a space for investors to discover and participate in these projects.
+<br/>
 
-### Steps involved in building an IDO Launchpad
+#### NOTE !!!
 
-Building an IDO launchpad involves several key steps to create a platform that enables the launching of projects and facilitates token sales. Here is an overview of the typical steps involved:
+In an Initial DEX Offering (IDO), the tokens are made available directly on a decentralized exchange (DEX) rather than through a traditional centralized exchange. In this type of fundraising model, whitelisting is not necessary because anyone with access to the DEX platform can participate and invest in the IDO.
+<br/>
 
-- Determine the specific features and functionalities you want to incorporate into your IDO launchpad. Consider aspects such as user registration, project submission, token sale mechanics, KYC procedures, token distribution, and security measures.
+Whitelisting is often used in other fundraising models, such as Initial Coin Offerings (ICOs) or token sales conducted on centralized exchanges. In these cases, the project team may require interested investors to register their wallet addresses in advance and be approved for participation. Whitelisting helps ensure that only approved individuals or entities can invest in the token sale.
+<br/>
 
-- Select the blockchain platform on which your IDO launchpad will be built like Celo blockchain.
+However, in an IDO, since the tokens are directly listed on a DEX, anyone with a compatible wallet and access to the DEX can participate without the need for prior approval or whitelisting. This allows for a more open and decentralized investment process, where investors can interact with the IDO contract on the blockchain and acquire tokens in a trustless manner.
+<br/>
 
-- Create the smart contracts to handle the core functionalities of the IDO launchpad. This includes contracts for project submissions, token sales, user whitelisting, KYC verification, and token distribution. Ensure that the smart contracts are secure, audited, and properly tested.
+Please note that the mechanics and requirements of IDOs can differ based on the platform or protocol utilized. For instance, in this tutorial, the launchpad being discussed requires investors' addresses to be whitelisted prior to the IDO.
 
-- Design an intuitive and user-friendly interface for the IDO launchpad. Consider the user experience, project browsing, token purchase process, and account management features. You can build a web-based interface or develop a mobile application based on your target audience and platform requirements.
+Article is published [here, continue reading ...](https://celo.academy/t/building-a-decentralised-ido-launchpad-on-celo-blockchain-a-comprehensive-tutorial-for-solidity-developers/864)
 
-- Integrate the smart contracts and blockchain functionality into the user interface. This involves connecting the user interface with the deployed smart contracts on the chosen blockchain platform.
+### Deployed Contract Address
 
-- Implement robust security measures to protect user data and funds. Conduct thorough security audits and penetration testing to identify vulnerabilities.
-
-- Test the functionality of the IDO launchpad thoroughly. Conduct both unit tests and end-to-end tests to ensure all features work as intended. Once testing is complete, deploy the smart contracts to the celo blockchain.
-
-- Develop a strategy to build and engage a community of users and projects on your IDO launchpad. Implement features to promote project visibility, user feedback, and community-driven decision-making. Create a marketing plan to attract projects, investors, and users to your platform.
-
-- Regularly monitor and maintain the IDO launchpad platform. Address any bugs, security vulnerabilities, or user feedback promptly. Continuously update and improve the platform with new features and enhancements to stay competitive in the evolving market.
-
-Building an IDO launchpad requires expertise in smart contract development, blockchain integration, user interface design, and security practices. It is essential to follow industry best practices, conduct thorough testing, and maintain a strong focus on security to ensure the success and trustworthiness of the platform.
-
-- Token Management: The launchpad should be able to handle the listing and management of tokens participating in IDOs. This includes token registration, whitelisting, and token distribution mechanisms.
-
-- Fundraising Mechanism: The launchpad needs to provide a secure and transparent fundraising mechanism for IDOs. This may involve features like token swaps, token lockups, and token release schedules.
-
-- KYC/AML Compliance: Implementing Know Your Customer (KYC) and Anti-Money Laundering (AML) procedures ensures regulatory compliance for participants in the IDOs. This may involve identity verification and validation processes.
-
-- Governance and Voting: The launchpad should have a governance framework that allows token holders to participate in decision-making processes, such as voting for token listings, project proposals, or platform upgrades.
-
-- Smart Contract Integration: Integration with smart contracts is crucial to facilitate token transactions, manage token vesting schedules, and execute various rules and conditions specific to the launchpad's functionality.
+- Yamtoken Contract Address is 0xFdaF7C2F1e8116120A037B858044Cb73c3c6dE9d
+- IDO LaunchPad Contract Address is 0x567946e9f6ECBde534580bC516b194906dC1efEc
